@@ -6,7 +6,7 @@ from imblearn.over_sampling import RandomOverSampler
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-DATA_PATH = "data/WA_Fn-UseC_-HR-Employee-Attrition.csv"
+DATA_PATH = "data/raw/employee_attrition.csv"
 PROCESSED_DIR = Path("data/processed")
 MODEL_DIR = Path("models")
 
@@ -55,3 +55,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -5,3 +5,4 @@ imbalanced-learn
 joblib
 mlflow==3.15.2
 skops
+matplotlib
