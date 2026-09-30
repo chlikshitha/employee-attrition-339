@@ -6,8 +6,14 @@ from pandera import Column, Check
 
 def get_employee_attrition_schema():
     return pa.DataFrameSchema({
-        "Age": Column(pa.Int, Check.between(18, 100)),
-        "Attrition": Column(pa.String, Check.isin(["Yes", "No"])),
+        "Age": Column(
+            pa.Int,
+            Check.between(18, 100)
+        ),
+        "Attrition": Column(
+            pa.String,
+            Check.isin(["Yes", "No"])
+        ),
         "BusinessTravel": Column(
             pa.String,
             Check.isin([
@@ -16,7 +22,10 @@ def get_employee_attrition_schema():
                 "Non-Travel"
             ])
         ),
-        "DailyRate": Column(pa.Int, Check.ge(0)),
+        "DailyRate": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
         "Department": Column(
             pa.String,
             Check.isin([
@@ -25,20 +34,52 @@ def get_employee_attrition_schema():
                 "Human Resources"
             ])
         ),
-        "DistanceFromHome": Column(pa.Int, Check.ge(0)),
-        "Education": Column(pa.Int, Check.between(1, 5)),
-        "EducationField": Column(pa.String),
-        "EmployeeCount": Column(pa.Int, Check.ge(0)),
-        "EmployeeNumber": Column(pa.Int, Check.ge(0)),
-        "EnvironmentSatisfaction": Column(pa.Int, Check.between(1, 4)),
+        "DistanceFromHome": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
+        "Education": Column(
+            pa.Int,
+            Check.between(1, 5)
+        ),
+        "EducationField": Column(
+            pa.String
+        ),
+        "EmployeeCount": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
+        "EmployeeNumber": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
+        "EnvironmentSatisfaction": Column(
+            pa.Int,
+            Check.between(1, 4)
+        ),
         "Gender": Column(
             pa.String,
             Check.isin(["Male", "Female"])
         ),
-        "JobInvolvement": Column(pa.Int, Check.between(1, 4)),
-        "JobLevel": Column(pa.Int, Check.between(1, 5)),
-        "JobRole": Column(pa.String),
-        "JobSatisfaction": Column(pa.Int, Check.between(1, 4)),
+        "HourlyRate": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
+        "JobInvolvement": Column(
+            pa.Int,
+            Check.between(1, 4)
+        ),
+        "JobLevel": Column(
+            pa.Int,
+            Check.between(1, 5)
+        ),
+        "JobRole": Column(
+            pa.String
+        ),
+        "JobSatisfaction": Column(
+            pa.Int,
+            Check.between(1, 4)
+        ),
         "MaritalStatus": Column(
             pa.String,
             Check.isin([
@@ -47,8 +88,18 @@ def get_employee_attrition_schema():
                 "Divorced"
             ])
         ),
-        "MonthlyIncome": Column(pa.Int, Check.ge(0)),
-        "NumCompaniesWorked": Column(pa.Int, Check.ge(0)),
+        "MonthlyIncome": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
+        "MonthlyRate": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
+        "NumCompaniesWorked": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
         "Over18": Column(
             pa.String,
             Check.isin(["Y"])
@@ -57,34 +108,83 @@ def get_employee_attrition_schema():
             pa.String,
             Check.isin(["Yes", "No"])
         ),
-        "PercentSalaryHike": Column(pa.Int, Check.between(0, 100)),
-        "PerformanceRating": Column(pa.Int, Check.between(1, 5)),
-        "RelationshipSatisfaction": Column(pa.Int, Check.between(1, 4)),
-        "StandardHours": Column(pa.Int, Check.ge(0)),
-        "StockOptionLevel": Column(pa.Int, Check.between(0, 3)),
-        "TotalWorkingYears": Column(pa.Int, Check.ge(0)),
-        "TrainingTimesLastYear": Column(pa.Int, Check.ge(0)),
-        "WorkLifeBalance": Column(pa.Int, Check.between(1, 4)),
-        "YearsAtCompany": Column(pa.Int, Check.ge(0)),
-        "YearsInCurrentRole": Column(pa.Int, Check.ge(0)),
-        "YearsSinceLastPromotion": Column(pa.Int, Check.ge(0)),
-        "YearsWithCurrManager": Column(pa.Int, Check.ge(0))
+        "PercentSalaryHike": Column(
+            pa.Int,
+            Check.between(0, 100)
+        ),
+        "PerformanceRating": Column(
+            pa.Int,
+            Check.between(1, 5)
+        ),
+        "RelationshipSatisfaction": Column(
+            pa.Int,
+            Check.between(1, 4)
+        ),
+        "StandardHours": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
+        "StockOptionLevel": Column(
+            pa.Int,
+            Check.between(0, 3)
+        ),
+        "TotalWorkingYears": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
+        "TrainingTimesLastYear": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
+        "WorkLifeBalance": Column(
+            pa.Int,
+            Check.between(1, 4)
+        ),
+        "YearsAtCompany": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
+        "YearsInCurrentRole": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
+        "YearsSinceLastPromotion": Column(
+            pa.Int,
+            Check.ge(0)
+        ),
+        "YearsWithCurrManager": Column(
+            pa.Int,
+            Check.ge(0)
+        )
     }, strict=True)
 
 
-def validate_schema(df, output_report_name="schema_validation_errors.csv"):
-    print(f"[INFO] Validating schema (Records: {len(df)})...")
+def validate_schema(
+    df,
+    output_report_name="schema_validation_errors.csv"
+):
+    print(
+        f"[INFO] Validating schema (Records: {len(df)})..."
+    )
 
     schema = get_employee_attrition_schema()
 
     try:
-        schema.validate(df, lazy=True)
+        schema.validate(
+            df,
+            lazy=True
+        )
 
-        print("[SUCCESS] Schema Validation PASSED. Dataset is clean.")
+        print(
+            "[SUCCESS] Schema Validation PASSED. Dataset is clean."
+        )
+
         return True
 
     except pa.errors.SchemaErrors as err:
-        print("[ERROR] Schema Validation FAILED. Corruptions detected.")
+        print(
+            "[ERROR] Schema Validation FAILED. Corruptions detected."
+        )
 
         failures = err.failure_cases[
             [
@@ -96,9 +196,14 @@ def validate_schema(df, output_report_name="schema_validation_errors.csv"):
             ]
         ]
 
-        print(failures.to_string())
+        print(
+            failures.to_string()
+        )
 
-        os.makedirs("artifacts", exist_ok=True)
+        os.makedirs(
+            "artifacts",
+            exist_ok=True
+        )
 
         report_path = os.path.join(
             "artifacts",
@@ -121,12 +226,15 @@ if __name__ == "__main__":
     data_path = "data/raw/employee_attrition.csv"
 
     if os.path.exists(data_path):
-        raw_df = pd.read_csv(data_path)
+        raw_df = pd.read_csv(
+            data_path
+        )
 
         validate_schema(
             raw_df,
             output_report_name="baseline_validation.csv"
         )
+
     else:
         print(
             f"[ERROR] Target file not found at: {data_path}"
