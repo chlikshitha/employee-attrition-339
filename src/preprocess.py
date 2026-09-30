@@ -1,58 +1,317 @@
-from pathlib import Path
+import os
+import json
 import joblib
-import numpy as np
 import pandas as pd
-from imblearn.over_sampling import RandomOverSampler
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from imblearn.over_sampling import RandomOverSampler
 
-DATA_PATH = "data/raw/employee_attrition.csv"
-PROCESSED_DIR = Path("data/processed")
-MODEL_DIR = Path("models")
 
-def prepare_features(df):
-    df = df.copy()
-    df["CurrentRoleTenureRatio"] = df["YearsInCurrentRole"] / (df["YearsAtCompany"] + 1)
-    df["PromotionGapRatio"] = df["YearsSinceLastPromotion"] / (df["YearsAtCompany"] + 1)
-    df["TenureGroup"] = pd.cut(df["YearsAtCompany"], bins=[-1, 2, 5, 10, 20, float("inf")], labels=["0-2 Years", "3-5 Years", "6-10 Years", "11-20 Years", "20+ Years"])
-    df = df.drop(columns=["Over18", "StandardHours", "EmployeeCount"], errors="ignore")
-    df = df.drop(columns=["MonthlyIncome"], errors="ignore")
-    df["Attrition"] = df["Attrition"].map({"No": 0, "Yes": 1})
-    df["TenureGroup"] = df["TenureGroup"].map({"0-2 Years": 0, "3-5 Years": 1, "6-10 Years": 2, "11-20 Years": 3, "20+ Years": 4})
-    categorical = df.drop(columns=["Attrition"]).select_dtypes(include=["object"]).columns.tolist()
-    df = pd.get_dummies(df, columns=categorical, drop_first=True)
-    bool_columns = df.select_dtypes(include=["bool"]).columns
-    df[bool_columns] = df[bool_columns].astype(int)
-    return df
+def run_preprocessing():
+    print("[INFO] Starting Employee Attrition Preprocessing Pipeline...")
 
-def main():
-    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-    MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    df = pd.read_csv(DATA_PATH)
-    prepared = prepare_features(df)
-    X = prepared.drop(columns=["Attrition"])
-    y = prepared["Attrition"]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42, stratify=y)
-    sampler = RandomOverSampler(random_state=42)
-    X_train_balanced, y_train_balanced = sampler.fit_resample(X_train, y_train)
+    data_path = "data/raw/employee_attrition.csv"
+    df = pd.read_csv(data_path)
+
+    print(f"[INFO] Raw dataset shape: {df.shape}")
+
+    if "Attrition" not in df.columns:
+        raise ValueError(
+            "Target column 'Attrition' was not found."
+        )
+
+    constant_columns = [
+        column
+        for column in [
+            "Over18",
+            "StandardHours",
+            "EmployeeCount"
+        ]
+        if column in df.columns
+    ]
+
+    if constant_columns:
+        df = df.drop(
+            columns=constant_columns
+        )
+
+        print(
+            f"[INFO] Removed constant columns: "
+            f"{constant_columns}"
+        )
+
+    if "MonthlyIncome" in df.columns:
+        df = df.drop(
+            columns=["MonthlyIncome"]
+        )
+
+        print(
+            "[INFO] Removed MonthlyIncome."
+        )
+
+    df["Attrition"] = (
+        df["Attrition"]
+        .astype(str)
+        .str.strip()
+        .str.lower()
+        .map({
+            "yes": 1,
+            "no": 0
+        })
+    )
+
+    if df["Attrition"].isna().any():
+        raise ValueError(
+            "Invalid values found in Attrition column."
+        )
+
+    print(
+        "[INFO] Creating engineered features..."
+    )
+
+    df["CurrentRoleTenureRatio"] = (
+        df["YearsInCurrentRole"]
+        / (df["YearsAtCompany"] + 1)
+    )
+
+    df["PromotionGapRatio"] = (
+        df["YearsSinceLastPromotion"]
+        / (df["YearsAtCompany"] + 1)
+    )
+
+    df["TenureGroup"] = pd.cut(
+        df["YearsAtCompany"],
+        bins=[
+            -1,
+            1,
+            3,
+            6,
+            10,
+            np.inf
+        ],
+        labels=[
+            0,
+            1,
+            2,
+            3,
+            4
+        ]
+    ).astype(int)
+
+    X = df.drop(
+        "Attrition",
+        axis=1
+    )
+
+    y = df["Attrition"].astype(
+        np.int64
+    )
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y
+    )
+
+    print(
+        f"[INFO] Training rows before balancing: "
+        f"{len(X_train)}"
+    )
+
+    print(
+        f"[INFO] Testing rows: "
+        f"{len(X_test)}"
+    )
+
+    cat_cols = X_train.select_dtypes(
+        include=[
+            "object",
+            "category"
+        ]
+    ).columns.tolist()
+
+    num_cols = X_train.select_dtypes(
+        include=[
+            "int64",
+            "float64"
+        ]
+    ).columns.tolist()
+
+    print(
+        f"[INFO] Numerical features: "
+        f"{len(num_cols)}"
+    )
+
+    print(
+        f"[INFO] Categorical features: "
+        f"{len(cat_cols)}"
+    )
+
     scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train_balanced)
-    X_test_scaled = scaler.transform(X_test)
-    np.save(PROCESSED_DIR / "X_train_scaled.npy", X_train_scaled)
-    np.save(PROCESSED_DIR / "X_test_scaled.npy", X_test_scaled)
-    np.save(PROCESSED_DIR / "y_train.npy", y_train_balanced.to_numpy())
-    np.save(PROCESSED_DIR / "y_test.npy", y_test.to_numpy())
-    X_train_balanced.to_csv(PROCESSED_DIR / "X_train_balanced.csv", index=False)
-    X_test.to_csv(PROCESSED_DIR / "X_test.csv", index=False)
-    prepared.to_csv(PROCESSED_DIR / "employee_attrition_encoded.csv", index=False)
-    joblib.dump(scaler, MODEL_DIR / "attrition_scaler.pkl")
-    joblib.dump(list(X.columns), MODEL_DIR / "feature_columns.pkl")
-    print("[SUCCESS] Employee Attrition preprocessing completed.")
-    print(f"[INFO] Training rows before balancing: {len(X_train)}")
-    print(f"[INFO] Training rows after balancing: {len(X_train_balanced)}")
-    print(f"[INFO] Testing rows: {len(X_test)}")
-    print(f"[INFO] Features: {X.shape[1]}")
+
+    X_train_scaled = scaler.fit_transform(
+        X_train[num_cols]
+    )
+
+    X_test_scaled = scaler.transform(
+        X_test[num_cols]
+    )
+
+    ohe = OneHotEncoder(
+        handle_unknown="ignore",
+        sparse_output=False
+    )
+
+    X_train_encoded = ohe.fit_transform(
+        X_train[cat_cols]
+    )
+
+    X_test_encoded = ohe.transform(
+        X_test[cat_cols]
+    )
+
+    X_train_final = np.hstack(
+        (
+            X_train_scaled,
+            X_train_encoded
+        )
+    )
+
+    X_test_final = np.hstack(
+        (
+            X_test_scaled,
+            X_test_encoded
+        )
+    )
+
+    print(
+        f"[INFO] Features before balancing: "
+        f"{X_train_final.shape[1]}"
+    )
+
+    ros = RandomOverSampler(
+        random_state=42
+    )
+
+    X_train_balanced, y_train_balanced = ros.fit_resample(
+        X_train_final,
+        y_train
+    )
+
+    print(
+        f"[INFO] Training rows after balancing: "
+        f"{len(X_train_balanced)}"
+    )
+
+    os.makedirs(
+        "data/processed",
+        exist_ok=True
+    )
+
+    os.makedirs(
+        "models",
+        exist_ok=True
+    )
+
+    np.save(
+        "data/processed/X_train_final.npy",
+        X_train_balanced
+    )
+
+    np.save(
+        "data/processed/X_test_final.npy",
+        X_test_final
+    )
+
+    np.save(
+        "data/processed/y_train.npy",
+        np.asarray(
+            y_train_balanced,
+            dtype=np.int64
+        )
+    )
+
+    np.save(
+        "data/processed/y_test.npy",
+        y_test.to_numpy(
+            dtype=np.int64
+        )
+    )
+
+    joblib.dump(
+        scaler,
+        "models/attrition_scaler.pkl"
+    )
+
+    feature_columns = {
+        "numerical_features": num_cols,
+        "categorical_features": cat_cols
+    }
+
+    joblib.dump(
+        feature_columns,
+        "models/feature_columns.pkl"
+    )
+
+    metadata = {
+        "dataset_name": "Employee Attrition",
+        "target_column": "Attrition",
+        "train_shape_before_balancing": [
+            int(X_train_final.shape[0]),
+            int(X_train_final.shape[1])
+        ],
+        "train_shape_after_balancing": [
+            int(X_train_balanced.shape[0]),
+            int(X_train_balanced.shape[1])
+        ],
+        "test_shape": [
+            int(X_test_final.shape[0]),
+            int(X_test_final.shape[1])
+        ],
+        "numerical_features": num_cols,
+        "categorical_features": cat_cols,
+        "removed_constant_columns": constant_columns,
+        "removed_features": [
+            "MonthlyIncome"
+        ],
+        "feature_engineering": [
+            "CurrentRoleTenureRatio",
+            "PromotionGapRatio",
+            "TenureGroup"
+        ],
+        "balancing_method": "RandomOverSampler",
+        "random_state": 42,
+        "test_size": 0.2
+    }
+
+    with open(
+        "data/processed/dataset_metadata.json",
+        "w"
+    ) as file:
+        json.dump(
+            metadata,
+            file,
+            indent=4
+        )
+
+    print(
+        "[SUCCESS] Employee Attrition preprocessing "
+        "completed successfully."
+    )
+
+    print(
+        "[SUCCESS] Scaler saved as "
+        "models/attrition_scaler.pkl"
+    )
+
+    print(
+        "[SUCCESS] Feature metadata saved as "
+        "models/feature_columns.pkl"
+    )
+
 
 if __name__ == "__main__":
-    main()
-
+    run_preprocessing()

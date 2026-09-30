@@ -9,3 +9,4 @@ artifacts/
 outputs/
 logs/
 data/processed/
+models/*.pkl
