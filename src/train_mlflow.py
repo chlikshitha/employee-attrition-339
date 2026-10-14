@@ -126,7 +126,8 @@ def train_and_track(run_name="RandomForest_Baseline", params=None):
             sk_model=model,
             name="model",
             skops_trusted_types=[
-                "sklearn.tree._tree.Tree"
+                "sklearn.tree._tree.Tree",
+                "numpy.dtype"
             ]
         )
 
