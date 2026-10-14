@@ -1,0 +1,31 @@
+name: Customer Churn Lab 9 Failure Handling
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "churn_prediction/src/mlops_pipeline/**"
+      - "churn_prediction/tests/**"
+      - "churn_prediction/config.yaml"
+      - ".github/workflows/churn_lab9_failure_tests.yml"
+  pull_request:
+    paths:
+      - "churn_prediction/src/mlops_pipeline/**"
+      - "churn_prediction/tests/**"
+      - "churn_prediction/config.yaml"
+      - ".github/workflows/churn_lab9_failure_tests.yml"
+jobs:
+  failure-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: churn_prediction/requirements.txt
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install pandas numpy scikit-learn PyYAML joblib mlflow matplotlib xgboost-cpu
+      - run: python -m unittest discover -s tests -v
+        working-directory: churn_prediction
+      - run: python src/mlops_pipeline/churn_prediction_pipeline.py
+        working-directory: churn_prediction
