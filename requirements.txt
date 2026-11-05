@@ -9,3 +9,5 @@ fastapi>=0.110,<1
 httpx>=0.27,<1
 uvicorn[standard]>=0.27,<1
 pytest>=8,<10
+matplotlib>=3.8,<4
+pandera>=0.20,<1

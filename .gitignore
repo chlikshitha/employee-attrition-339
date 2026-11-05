@@ -3,8 +3,15 @@ venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.env
+.ipynb_checkpoints/
 mlruns/
 mlflow.db
+artifacts/
+outputs/
+logs/
+data/processed/
+models/*.pkl
 reports/*.csv
 reports/lab*_report.json
 reports/inference_predictions.csv
