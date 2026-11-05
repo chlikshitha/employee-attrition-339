@@ -1,0 +1,11 @@
+{
+    "model_name": "Employee_Attrition_Production_Model",
+    "versions": [
+        {
+            "version": 1,
+            "run_id": "3fa0cefb105941a3b9ae79fd5dea949e",
+            "status": "READY",
+            "current_stage": "None"
+        }
+    ]
+}

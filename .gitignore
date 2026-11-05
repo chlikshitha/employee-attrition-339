@@ -1,0 +1,11 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+mlruns/
+mlflow.db
+reports/*.csv
+reports/lab*_report.json
+reports/inference_predictions.csv
+models/employee_attrition_pipeline.joblib

@@ -1,0 +1,17 @@
+{
+    "X_train_shape": [
+        1972,
+        47
+    ],
+    "X_test_shape": [
+        294,
+        47
+    ],
+    "y_train_shape": [
+        1972
+    ],
+    "y_test_shape": [
+        294
+    ],
+    "feature_count": 47
+}

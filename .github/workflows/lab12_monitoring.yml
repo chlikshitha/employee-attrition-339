@@ -1,0 +1,21 @@
+﻿name: Lab 12 - Model Monitoring
+on:
+  push:
+    paths: ["**"]
+  pull_request:
+    paths: ["**"]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 12 * * 1"
+jobs:
+  monitoring:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements.txt
+      - run: python -m src.lab12_monitoring
+
+
