@@ -5,6 +5,7 @@ import pytest
 
 from src.attrition_common import features_target, make_estimator, validate_frame
 from src.lab12_monitoring import _psi
+from pipelines.run_lab4_tracking import run_lab4_tracking
 
 
 def sample_data():
@@ -64,3 +65,31 @@ def test_api_returns_employee_attrition_predictions(monkeypatch):
     response = asyncio.run(send_request())
     assert response.status_code == 200
     assert response.json()["predictions"][0]["attrition_prediction"] == 1
+
+
+def test_lab4_preprocesses_before_mlflow_tracking(monkeypatch):
+    calls = []
+
+    def fake_run(command, check=False):
+        calls.append(command[-1])
+        return type("Result", (), {"returncode": 0})()
+
+    monkeypatch.setattr("pipelines.run_lab4_tracking.subprocess.run", fake_run)
+    run_lab4_tracking()
+
+    assert calls == ["src/preprocess.py", "src/train_mlflow.py"]
+
+
+def test_lab4_stops_if_preprocessing_fails(monkeypatch):
+    calls = []
+
+    def fake_run(command, check=False):
+        calls.append(command[-1])
+        return type("Result", (), {"returncode": 7})()
+
+    monkeypatch.setattr("pipelines.run_lab4_tracking.subprocess.run", fake_run)
+    with pytest.raises(SystemExit) as exc_info:
+        run_lab4_tracking()
+
+    assert exc_info.value.code == 7
+    assert calls == ["src/preprocess.py"]
