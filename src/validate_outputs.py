@@ -8,10 +8,27 @@ from sklearn.metrics import f1_score
 def run_deterministic_test():
     print("Running Employee Attrition Reproducibility Validation...")
 
+    required = [
+        "data/processed/X_train_final.npy",
+        "data/processed/X_test_final.npy",
+        "data/processed/y_train.npy",
+        "data/processed/y_test.npy",
+    ]
+    missing = [path for path in required if not os.path.isfile(path)]
+    if missing:
+        raise FileNotFoundError(f"Missing preprocessed artifacts: {missing}")
+
     X_train = np.load("data/processed/X_train_final.npy")
     X_test = np.load("data/processed/X_test_final.npy")
     y_train = np.load("data/processed/y_train.npy")
     y_test = np.load("data/processed/y_test.npy")
+
+    if X_train.ndim != 2 or X_test.ndim != 2:
+        raise ValueError("Processed feature arrays must be two-dimensional")
+    if X_train.shape[1] != X_test.shape[1]:
+        raise ValueError("Train/test feature counts do not match")
+    if len(X_train) != len(y_train) or len(X_test) != len(y_test):
+        raise ValueError("Feature and target row counts do not match")
 
     params = {
         "C": 0.01,

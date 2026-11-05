@@ -21,6 +21,23 @@ def generate_registry_report():
             )
             return
 
+        # Preserve the compact report consumed by the original Lab 6 workflow.
+        compact_report = {
+            "model_name": model_name,
+            "versions": [
+                {
+                    "version": int(version.version),
+                    "run_id": version.run_id,
+                    "status": version.status,
+                    "current_stage": version.current_stage,
+                }
+                for version in sorted(registered_models, key=lambda item: int(item.version))
+            ],
+        }
+        os.makedirs("artifacts", exist_ok=True)
+        with open("artifacts/model_registry_report.json", "w", encoding="utf-8") as file:
+            json.dump(compact_report, file, indent=2)
+
         production_models = [
             mv
             for mv in registered_models

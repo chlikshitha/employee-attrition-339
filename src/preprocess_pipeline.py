@@ -192,6 +192,16 @@ def run_preprocessing():
         X_test_final
     )
 
+    # Backward-compatible artifacts consumed by the original Labs 3/4.
+    np.save(
+        "data/processed/X_train_scaled.npy",
+        X_train_final
+    )
+    np.save(
+        "data/processed/X_test_scaled.npy",
+        X_test_final
+    )
+
     np.save(
         "data/processed/y_train.npy",
         y_train.to_numpy(dtype=np.int64)

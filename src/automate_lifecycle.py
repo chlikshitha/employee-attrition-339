@@ -1,279 +1,49 @@
+import json
+from pathlib import Path
+
 import mlflow
-from mlflow.tracking import MlflowClient
 
 
 def automate_champion_challenger():
+    """Compare registered Employee Attrition versions without changing stages."""
+    client = mlflow.MlflowClient()
     model_name = "Employee_Attrition_Production_Model"
-    metric_to_optimize = "f1"
+    versions = client.search_model_versions(f"name='{model_name}'")
+    if not versions:
+        report = {"model_name": model_name, "status": "no_registered_versions"}
+        print("[INFO] No registered model versions found.")
+    else:
+        latest = max(versions, key=lambda version: int(version.version))
+        production = [version for version in versions if version.current_stage == "Production"]
+        champion = max(production, key=lambda version: int(version.version)) if production else None
+        latest_run = client.get_run(latest.run_id) if latest.run_id else None
+        latest_f1 = latest_run.data.metrics.get("f1") if latest_run else None
+        champion_run = client.get_run(champion.run_id) if champion and champion.run_id else None
+        champion_f1 = champion_run.data.metrics.get("f1") if champion_run else None
+        report = {
+            "model_name": model_name,
+            "status": "comparison_complete",
+            "latest_version": int(latest.version),
+            "latest_stage": latest.current_stage,
+            "latest_f1": latest_f1,
+            "production_version": int(champion.version) if champion else None,
+            "production_f1": champion_f1,
+            "recommended_action": (
+                "review_candidate_for_promotion" if champion is None or
+                (latest_f1 is not None and champion_f1 is not None and latest_f1 > champion_f1)
+                else "keep_current_production"
+            ),
+            "registry_changed": False,
+        }
+        print(f"[INFO] Latest registered version: {latest.version}")
+        print(f"[INFO] Current stage: {latest.current_stage}")
+        print(f"[INFO] Lifecycle recommendation: {report['recommended_action']}")
 
-    client = MlflowClient()
-
-    print("=" * 70)
-    print("EMPLOYEE ATTRITION CHAMPION-CHALLENGER LIFECYCLE")
-    print("=" * 70)
-
-    try:
-        versions = client.search_model_versions(
-            f"name='{model_name}'"
-        )
-
-        if not versions:
-            print(f"[ERROR] No registered versions found for {model_name}")
-            return
-
-        print(f"[INFO] Registered model: {model_name}")
-        print(f"[INFO] Total versions found: {len(versions)}")
-
-        staging_versions = []
-
-        for version in versions:
-            if version.current_stage == "None":
-                try:
-                    client.transition_model_version_stage(
-                        name=model_name,
-                        version=version.version,
-                        stage="Staging",
-                        archive_existing_versions=False
-                    )
-
-                    print(
-                        f"[INFO] Version {version.version} "
-                        f"moved to Staging"
-                    )
-
-                except Exception as exc:
-                    print(
-                        f"[WARNING] Could not move version "
-                        f"{version.version} to Staging: {exc}"
-                    )
-
-        versions = client.search_model_versions(
-            f"name='{model_name}'"
-        )
-
-        for version in versions:
-            if version.current_stage == "Staging":
-                staging_versions.append(version)
-
-        if not staging_versions:
-            print("[ERROR] No Staging versions available")
-            return
-
-        print(
-            f"[INFO] Staging versions: "
-            f"{[v.version for v in staging_versions]}"
-        )
-
-        candidate_scores = []
-
-        for version in staging_versions:
-            run_id = version.run_id
-
-            if not run_id:
-                print(
-                    f"[WARNING] Version {version.version} "
-                    f"has no run ID"
-                )
-                continue
-
-            run = client.get_run(run_id)
-
-            metric_value = run.data.metrics.get(metric_to_optimize)
-
-            if metric_value is None:
-                print(
-                    f"[WARNING] Version {version.version} "
-                    f"does not contain metric '{metric_to_optimize}'"
-                )
-                continue
-
-            candidate_scores.append(
-                {
-                    "version": version.version,
-                    "run_id": run_id,
-                    "score": metric_value
-                }
-            )
-
-            print(
-                f"[INFO] Version {version.version} "
-                f"{metric_to_optimize}={metric_value:.4f}"
-            )
-
-        if not candidate_scores:
-            print("[ERROR] No valid Challenger models found")
-            return
-
-        candidate_scores.sort(
-            key=lambda item: item["score"],
-            reverse=True
-        )
-
-        challenger = candidate_scores[0]
-
-        production_versions = [
-            version
-            for version in versions
-            if version.current_stage == "Production"
-        ]
-
-        champion = None
-
-        if production_versions:
-            champion_version = production_versions[0]
-
-            if champion_version.run_id:
-                champion_run = client.get_run(
-                    champion_version.run_id
-                )
-
-                champion_score = champion_run.data.metrics.get(
-                    metric_to_optimize
-                )
-
-                if champion_score is not None:
-                    champion = {
-                        "version": champion_version.version,
-                        "run_id": champion_version.run_id,
-                        "score": champion_score
-                    }
-
-        print("-" * 70)
-
-        if champion is None:
-            print("[INFO] No current Production Champion found")
-            print(
-                f"[INFO] Challenger version "
-                f"{challenger['version']} will be promoted"
-            )
-
-            client.transition_model_version_stage(
-                name=model_name,
-                version=challenger["version"],
-                stage="Production",
-                archive_existing_versions=False
-            )
-
-            print(
-                f"[SUCCESS] Version {challenger['version']} "
-                f"promoted to Production"
-            )
-
-        else:
-            print(
-                f"[INFO] Champion version: "
-                f"{champion['version']}"
-            )
-
-            print(
-                f"[INFO] Champion {metric_to_optimize}: "
-                f"{champion['score']:.4f}"
-            )
-
-            print(
-                f"[INFO] Challenger version: "
-                f"{challenger['version']}"
-            )
-
-            print(
-                f"[INFO] Challenger {metric_to_optimize}: "
-                f"{challenger['score']:.4f}"
-            )
-
-            if challenger["score"] > champion["score"]:
-
-                print(
-                    "[INFO] Challenger has a higher "
-                    f"{metric_to_optimize}"
-                )
-
-                client.transition_model_version_stage(
-                    name=model_name,
-                    version=challenger["version"],
-                    stage="Production",
-                    archive_existing_versions=True
-                )
-
-                print(
-                    f"[SUCCESS] Challenger version "
-                    f"{challenger['version']} promoted to Production"
-                )
-
-                print(
-                    f"[INFO] Previous Champion version "
-                    f"{champion['version']} archived"
-                )
-
-            else:
-
-                print(
-                    "[INFO] Challenger did not exceed "
-                    "the current Champion"
-                )
-
-                client.transition_model_version_stage(
-                    name=model_name,
-                    version=challenger["version"],
-                    stage="Archived"
-                )
-
-                print(
-                    f"[INFO] Challenger version "
-                    f"{challenger['version']} archived"
-                )
-
-        for candidate in candidate_scores[1:]:
-            version_number = candidate["version"]
-
-            try:
-                current_version = client.get_model_version(
-                    name=model_name,
-                    version=version_number
-                )
-
-                if current_version.current_stage == "Staging":
-                    client.transition_model_version_stage(
-                        name=model_name,
-                        version=version_number,
-                        stage="Archived"
-                    )
-
-                    print(
-                        f"[INFO] Non-selected Staging version "
-                        f"{version_number} archived"
-                    )
-
-            except Exception as exc:
-                print(
-                    f"[WARNING] Could not archive version "
-                    f"{version_number}: {exc}"
-                )
-
-        print("-" * 70)
-        print("FINAL MODEL LIFECYCLE STATUS")
-        print("-" * 70)
-
-        final_versions = client.search_model_versions(
-            f"name='{model_name}'"
-        )
-
-        for version in sorted(
-            final_versions,
-            key=lambda item: int(item.version)
-        ):
-            print(
-                f"Version {version.version}: "
-                f"{version.current_stage}"
-            )
-
-        print("=" * 70)
-        print("[SUCCESS] Champion-Challenger lifecycle completed")
-        print("=" * 70)
-
-    except Exception as exc:
-        print(
-            f"[ERROR] Champion-Challenger lifecycle failed: {exc}"
-        )
+    output = Path("artifacts/model_lifecycle_decision.json")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    print("[SUCCESS] Model lifecycle check completed without changing registry stages.")
+    return report
 
 
 if __name__ == "__main__":

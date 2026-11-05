@@ -1,4 +1,5 @@
 import os
+import json
 import numpy as np
 import pandas as pd
 import joblib
@@ -35,6 +36,16 @@ def run_evaluation():
     prec = precision_score(y_test, y_pred, zero_division=0)
     rec = recall_score(y_test, y_pred, zero_division=0)
     f1 = f1_score(y_test, y_pred, zero_division=0)
+
+    os.makedirs("artifacts", exist_ok=True)
+    with open("artifacts/baseline_metrics.json", "w", encoding="utf-8") as file:
+        json.dump({
+            "accuracy": float(acc),
+            "precision": float(prec),
+            "recall": float(rec),
+            "f1": float(f1),
+            "roc_auc": float(roc_auc),
+        }, file, indent=2)
 
     print("\n--- Employee Attrition Evaluation Report ---")
     print(f"Accuracy : {acc:.4f}")

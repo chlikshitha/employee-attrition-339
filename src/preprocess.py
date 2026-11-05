@@ -226,6 +226,16 @@ def run_preprocessing():
         X_test_final
     )
 
+    # Keep Lab 3/4's established filenames as aliases of the same arrays.
+    np.save(
+        "data/processed/X_train_scaled.npy",
+        X_train_balanced
+    )
+    np.save(
+        "data/processed/X_test_scaled.npy",
+        X_test_final
+    )
+
     np.save(
         "data/processed/y_train.npy",
         np.asarray(
