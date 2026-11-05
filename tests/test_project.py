@@ -1,11 +1,19 @@
 import asyncio
+import importlib.util
 import httpx
+from pathlib import Path
 import pandas as pd
 import pytest
 
 from src.attrition_common import features_target, make_estimator, validate_frame
 from src.lab12_monitoring import _psi
-from pipelines.run_lab4_tracking import run_lab4_tracking
+_lab4_spec = importlib.util.spec_from_file_location(
+    "employee_attrition_lab4_tracking",
+    Path(__file__).resolve().parents[1] / "pipelines" / "run_lab4_tracking.py",
+)
+lab4_tracking = importlib.util.module_from_spec(_lab4_spec)
+_lab4_spec.loader.exec_module(lab4_tracking)
+run_lab4_tracking = lab4_tracking.run_lab4_tracking
 
 
 def sample_data():
@@ -74,7 +82,7 @@ def test_lab4_preprocesses_before_mlflow_tracking(monkeypatch):
         calls.append(command[-1])
         return type("Result", (), {"returncode": 0})()
 
-    monkeypatch.setattr("pipelines.run_lab4_tracking.subprocess.run", fake_run)
+    monkeypatch.setattr(lab4_tracking.subprocess, "run", fake_run)
     run_lab4_tracking()
 
     assert calls == ["src/preprocess.py", "src/train_mlflow.py"]
@@ -87,7 +95,7 @@ def test_lab4_stops_if_preprocessing_fails(monkeypatch):
         calls.append(command[-1])
         return type("Result", (), {"returncode": 7})()
 
-    monkeypatch.setattr("pipelines.run_lab4_tracking.subprocess.run", fake_run)
+    monkeypatch.setattr(lab4_tracking.subprocess, "run", fake_run)
     with pytest.raises(SystemExit) as exc_info:
         run_lab4_tracking()
 
