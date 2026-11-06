@@ -1,5 +1,6 @@
 import asyncio
 import importlib.util
+import sys
 import httpx
 from pathlib import Path
 import pandas as pd
@@ -59,9 +60,14 @@ def test_psi_is_zero_for_same_distribution():
 
 
 def test_api_returns_employee_attrition_predictions(monkeypatch):
-    from api.app import app
+    app_path = Path(__file__).resolve().parents[1] / "api" / "app.py"
+    app_spec = importlib.util.spec_from_file_location("employee_attrition_test_api", app_path)
+    app_module = importlib.util.module_from_spec(app_spec)
+    sys.modules[app_spec.name] = app_module
+    app_spec.loader.exec_module(app_module)
+    app = app_module.app
 
-    monkeypatch.setattr("api.app.predict", lambda frame: pd.DataFrame({
+    monkeypatch.setattr(app_module, "predict", lambda frame: pd.DataFrame({
         "attrition_prediction": [1], "attrition_probability": [0.75]
     }))
     async def send_request():
