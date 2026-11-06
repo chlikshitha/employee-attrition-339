@@ -1,6 +1,6 @@
 ﻿# Employee Attrition and Customer Churn MLOps
 
-This repository keeps two independent projects: Employee Attrition at the repository root and the original Customer Churn project under `churn_prediction/`. Each project has its own dataset, model artifacts, scripts, dependencies, and reports. Employee Attrition Labs 3–6 are preserved; Labs 7–13 and their workflows are included at the root.
+This repository keeps two independent projects: Employee Attrition at the repository root and the original Customer Churn project under `churn_prediction/`. Each project has its own dataset, model artifacts, scripts, dependencies, and reports. Employee Attrition Labs 1–13 and their workflows are included at the repository root.
 
 ## Employee Attrition
 
@@ -8,7 +8,9 @@ Uses the IBM HR dataset at `data/raw/employee_attrition.csv` with `Attrition` as
 
 | Lab | Implementation | Workflow |
 |---|---|---|
-| 3 | Baseline preprocessing, training, evaluation | `.github/workflows/lab3_baseline.yml` |
+| 1 | Dataset loading, exploration, cleaning, and preprocessing | .github/workflows/lab1_data_preparation.yml |
+| 2 | Decision tree baseline model, evaluation, and saved artifacts | .github/workflows/lab2_baseline_model.yml |
+| 3 | Baseline preprocessing, training, evaluation | .github/workflows/lab3_baseline.yml |
 | 4 | MLflow experiment tracking | `.github/workflows/lab4_tracking.yml` |
 | 5 | Validated data/preprocessing pipeline | `.github/workflows/lab5_pipeline.yml` |
 | 6 | Model registry and lifecycle report | `.github/workflows/lab6_registry.yml` |
@@ -20,7 +22,9 @@ Uses the IBM HR dataset at `data/raw/employee_attrition.csv` with `Attrition` as
 | 12 | Numeric feature PSI monitoring | `.github/workflows/lab12_monitoring.yml` |
 | 13 | End-to-end orchestration and report artifacts | `.github/workflows/lab13_end_to_end.yml` |
 
-The lab scope follows this project's implementation and research paper. Check your course rubric for any additional requirements. Workflow definitions have not been verified by a GitHub Actions run unless stated in the local run reports.
+The lab scope follows this project's implementation and research paper. Check your course rubric for any additional requirements.
+
+Lab 1 writes an isolated cleaned dataset and preparation report. Lab 2 trains a shallow Decision Tree baseline and saves its model, test metrics, and predictions under Lab 2-specific paths. Lab 3 retains its existing Logistic Regression workflow and artifacts. Workflow definitions have not been verified by a GitHub Actions run unless stated in the local run reports.
 
 ### Setup and run
 
@@ -31,6 +35,8 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m src.lab1_data_preparation
+python -m src.lab2_baseline_model
 python pipelines/run_lab3_baseline.py
 python pipelines/run_lab4_tracking.py
 python pipelines/run_lab5_pipeline.py
