@@ -1,84 +1,104 @@
-﻿# Employee Attrition and Customer Churn MLOps
+﻿# Employee Attrition MLOps
 
-This repository keeps two independent projects: Employee Attrition at the repository root and the original Customer Churn project under `churn_prediction/`. Each project has its own dataset, model artifacts, scripts, dependencies, and reports. Employee Attrition Labs 1–13 and their workflows are included at the repository root.
+An end-to-end machine learning project for preparing employee data, training and evaluating attrition models, tracking experiments, serving predictions, and monitoring model inputs. The project uses the IBM HR Analytics Employee Attrition dataset and predicts the `Attrition` target.
 
-## Employee Attrition
+## Labs 1–13
 
-Uses the IBM HR dataset at `data/raw/employee_attrition.csv` with `Attrition` as the target. Lab 7 aligns with the project research paper's engineered tenure features, tuned Logistic Regression (`C=0.01`, `solver=liblinear`), and class imbalance handling.
-
-| Lab | Implementation | Workflow |
+| Lab | Focus | Main implementation |
 |---|---|---|
-| 1 | Dataset loading, exploration, cleaning, and preprocessing | .github/workflows/lab1_data_preparation.yml |
-| 2 | Decision tree baseline model, evaluation, and saved artifacts | .github/workflows/lab2_baseline_model.yml |
-| 3 | Baseline preprocessing, training, evaluation | .github/workflows/lab3_baseline.yml |
-| 4 | MLflow experiment tracking | `.github/workflows/lab4_tracking.yml` |
-| 5 | Validated data/preprocessing pipeline | `.github/workflows/lab5_pipeline.yml` |
-| 6 | Model registry and lifecycle report | `.github/workflows/lab6_registry.yml` |
-| 7 | Reproducible train/evaluation pipeline | `.github/workflows/lab7_pipeline.yml` |
-| 8 | CI tests and Python compilation | `.github/workflows/lab8_ci.yml` |
-| 9 | Invalid-data failure handling | `.github/workflows/lab9_failure_handling.yml` |
-| 10 | Batch inference and FastAPI serving | `.github/workflows/lab10_inference.yml` |
-| 11 | Docker image build and Kubernetes manifest | `.github/workflows/lab11_container.yml` |
-| 12 | Numeric feature PSI monitoring | `.github/workflows/lab12_monitoring.yml` |
-| 13 | End-to-end orchestration and report artifacts | `.github/workflows/lab13_end_to_end.yml` |
+| 1 | Dataset preparation | Load, explore, clean, and preprocess employee records; save a preparation report. |
+| 2 | Baseline model | Train and evaluate a Decision Tree baseline; save the model, metrics, and predictions. |
+| 3 | Baseline pipeline | Preprocess data, train a baseline estimator, and evaluate results. |
+| 4 | Experiment tracking | Track model runs and metrics with MLflow. |
+| 5 | Validated data pipeline | Validate inputs and run the preprocessing pipeline. |
+| 6 | Model registry | Register the model and generate lifecycle and registry reports. |
+| 7 | Reproducible pipeline | Engineer tenure features, train and evaluate the pipeline, and record the data hash and metrics. |
+| 8 | Continuous integration | Run the test suite and compile Python source in GitHub Actions. |
+| 9 | Failure handling | Exercise invalid input and pipeline failure checks. |
+| 10 | Inference | Generate predictions and serve them through the FastAPI application. |
+| 11 | Containerization | Build the API Docker image; include a sample Kubernetes deployment manifest. |
+| 12 | Monitoring | Compare feature distributions using Population Stability Index (PSI). |
+| 13 | End-to-end run | Orchestrate pipeline, inference, failure checks, and monitoring; save a run report. |
 
-The lab scope follows this project's implementation and research paper. Check your course rubric for any additional requirements.
+Each lab has a corresponding workflow in `.github/workflows/` named `lab1_data_preparation.yml` through `lab13_end_to_end.yml` (with descriptive lab-specific filenames).
 
-Lab 1 writes an isolated cleaned dataset and preparation report. Lab 2 trains a shallow Decision Tree baseline and saves its model, test metrics, and predictions under Lab 2-specific paths. Lab 3 retains its existing Logistic Regression workflow and artifacts. Workflow definitions have not been verified by a GitHub Actions run unless stated in the local run reports.
+## Technologies
 
-### Setup and run
+- Python 3.11
+- pandas, NumPy, scikit-learn, imbalanced-learn, and joblib
+- MLflow for experiment tracking and model registry work
+- FastAPI, Pydantic, and Uvicorn for prediction serving
+- pytest for automated tests
+- Docker for containerization; Kubernetes manifest for deployment examples
+- GitHub Actions for continuous integration and lab workflows
 
-Run from the repository root with Python 3.11 or newer:
+Install dependencies from `requirements.txt`.
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-python -m src.lab1_data_preparation
-python -m src.lab2_baseline_model
-python pipelines/run_lab3_baseline.py
-python pipelines/run_lab4_tracking.py
-python pipelines/run_lab5_pipeline.py
-python pipelines/run_lab6_registry.py
-python -m src.lab7_pipeline
-python -m src.lab9_failure_tests
-python -m src.lab10_inference
-python -m src.lab12_monitoring
-python -m src.lab13_end_to_end
+## Project structure
+
+```text
+.
+├── .github/workflows/       # Lab 1–13 GitHub Actions workflows
+├── api/                     # FastAPI application
+├── data/
+│   ├── raw/                 # Source employee attrition dataset
+│   └── processed/           # Prepared data generated by Lab 1
+├── models/                  # Saved baseline and pipeline models
+├── pipelines/               # Lab 3–6 pipeline entry points
+├── src/                     # Lab scripts and shared ML utilities
+├── tests/                   # Employee Attrition test suite
+├── artifacts/               # Registry, preprocessing, and model reports
+├── outputs/                 # Evaluation outputs and predictions
+├── reports/                 # Lab reports and inference results
+├── Dockerfile
+├── k8s/deployment.yaml      # Sample deployment manifest
+├── requirements.txt
+└── README.md
+```
+
+## Results
+
+Saved reports use a stratified 80/20 split with random state 42 (1,176 training rows and 294 test rows from 1,470 records).
+
+| Run | Accuracy | Precision | Recall | F1 | ROC-AUC |
+|---|---:|---:|---:|---:|---:|
+| Lab 2 Decision Tree baseline | 0.837 | 0.474 | 0.191 | 0.273 | 0.659 |
+| Lab 7 engineered-feature pipeline | 0.762 | 0.374 | 0.723 | 0.493 | 0.815 |
+
+The Lab 7 report records the model at `models/employee_attrition_pipeline.joblib`. The Lab 13 report records its pipeline, inference, failure checks, and monitoring stages as passed; it also states that no deployment target is configured. These are saved experiment results, not a claim of production deployment.
+
+Run the Employee Attrition tests from the repository root:
+
+```bash
 python -m pytest -q
 ```
 
-Linux/macOS activation: `source .venv/bin/activate`.
+## Docker API
 
-Lab 7 uses a stratified 80/20 split and fixed random state, records the data SHA-256 and metrics, and saves `models/employee_attrition_pipeline.joblib`. Reports are written under `reports/`. Local MLflow registry state and generated artifacts are environment-specific.
+Build the model artifact before building the image, then run the API on port 8000:
 
-Run the API after creating the Lab 7 model:
-
-```powershell
-python -m uvicorn api.app:app --host 127.0.0.1 --port 8000
-```
-
-API docs: `http://127.0.0.1:8000/docs`. Build and run the local image after Lab 7:
-
-```powershell
+```bash
+python -m src.lab7_pipeline
 docker build -t employee-attrition-api:local .
-docker run --rm -p 8000:8000 employee-attrition-api:local
+docker run --rm --name employee-attrition-api -p 8000:8000 employee-attrition-api:local
 ```
 
-`k8s/deployment.yaml` is a sample manifest. CI builds the container but does not deploy to a cluster. Lab 12's default reference/current dataset is unchanged input, so it should report no drift; this is not evidence of live production monitoring.
+The interactive API documentation is available at `http://localhost:8000/docs`.
 
-## Customer Churn project
+Check API health:
 
-The existing Churn project is retained in [`churn_prediction/`](churn_prediction/README.md). Its GitHub Actions workflows are at the repository root in `.github/workflows/churn_lab8_ci.yml` and `.github/workflows/churn_lab9_failure_tests.yml`.
-
-Run Churn commands from its own directory, with its own environment and dependencies:
-
-```powershell
-cd churn_prediction
-python -m pip install -r requirements.txt
-python -m unittest discover -s tests -v
-python src/mlops_pipeline/churn_prediction_pipeline.py
+```bash
+curl http://localhost:8000/health
 ```
 
-The Churn project uses its own local MLflow database and outputs. Do not mix its data or generated artifacts with the Employee Attrition project.
+Expected response: `{"status":"ok"}` when the saved model is available.
+
+Send an employee record to `POST /predict`. The `records` value may be one employee object or a list of employee objects.
+
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"records":[{"Age":41,"BusinessTravel":"Travel_Rarely","DailyRate":1102,"Department":"Research & Development","DistanceFromHome":1,"Education":3,"EducationField":"Life Sciences","EnvironmentSatisfaction":3,"Gender":"Female","HourlyRate":94,"JobInvolvement":3,"JobLevel":2,"JobRole":"Research Scientist","JobSatisfaction":4,"MaritalStatus":"Married","MonthlyRate":19479,"NumCompaniesWorked":1,"OverTime":"No","PercentSalaryHike":11,"PerformanceRating":3,"RelationshipSatisfaction":3,"StockOptionLevel":1,"TotalWorkingYears":8,"TrainingTimesLastYear":3,"WorkLifeBalance":3,"YearsAtCompany":5,"YearsInCurrentRole":4,"YearsSinceLastPromotion":0,"YearsWithCurrManager":5}]}'
+```
+
+A successful response contains a `predictions` array with `attrition_prediction` and `attrition_probability` for each record.
