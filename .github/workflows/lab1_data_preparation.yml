@@ -1,0 +1,25 @@
+name: Lab 1 - Employee Attrition Data Preparation
+on:
+  push:
+    paths: ["**"]
+  pull_request:
+    paths: ["**"]
+  workflow_dispatch:
+jobs:
+  data-preparation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: "requirements.txt"
+      - run: python -m pip install -r requirements.txt
+      - run: python -m src.lab1_data_preparation
+      - uses: actions/upload-artifact@v7
+        with:
+          name: employee-attrition-lab1
+          path: |
+            data/processed/lab1_employee_attrition_cleaned.csv
+            reports/lab1_data_preparation_report.json
